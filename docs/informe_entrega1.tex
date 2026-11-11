@@ -1,0 +1,1147 @@
+%=======================================================================
+%  Informe de la Entrega 1 - Proyecto de Integracion Continua (CI/CD)
+%  Compilar con:  tectonic informe_entrega1.tex
+%  o en Overleaf:  https://www.overleaf.com  (subir esta carpeta)
+%=======================================================================
+\documentclass[12pt,a4paper]{article}
+
+%-----------------------------------------------------------------------
+%  PAQUETES
+%-----------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+% Desactiva el atajo de comillas de babel: el caracter " se usa literalmente
+% en nombres de host (por ejemplo "db") y en fragmentos JSON.
+\shorthandoff{"}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,backgrounds,calc}
+\usepackage[hidelinks,breaklinks]{hyperref}
+
+\usetikzlibrary{babel}
+
+%-----------------------------------------------------------------------
+%  DATOS EDITABLES  (cambie SOLO esta seccion para personalizar el informe)
+%-----------------------------------------------------------------------
+\newcommand{\titulo}{Contenedores comunicados con Docker y pipeline de GitHub Actions}
+\newcommand{\titulocorto}{Entrega 1 \textbullet\ Docker Compose + GitHub Actions}
+\newcommand{\subtitulo}{Entrega 1 -- Aplicaci\'on Flask con PostgreSQL orquestada por Docker Compose}
+\newcommand{\materia}{Integraci\'on Continua y Entrega Continua (CI/CD)}
+\newcommand{\materiaheader}{CI/CD}
+\newcommand{\institucion}{Instituci\'on Educativa \textcolor{gray}{[completar]}}
+\newcommand{\docente}{Nombre del docente \textcolor{gray}{[completar]}}
+\newcommand{\repositorio}{\url{https://github.com/USUARIO/proyecto-ci}}
+\newcommand{\grupo}{Grupo \textcolor{gray}{[completar]}}
+\newcommand{\fechatexto}{Noviembre de 2026}
+
+% Integrantes: se edita SOLO esta linea.
+\newcommand{\integrantes}{%
+  Miguel \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
+  \textcolor{gray}{[Correo institucional]} \\[2pt]
+  Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
+  \textcolor{gray}{[Correo institucional]} \\[2pt]
+  Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
+  \textcolor{gray}{[Correo institucional]} \\[2pt]
+  Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
+  \textcolor{gray}{[Correo institucional]}
+}
+
+%-----------------------------------------------------------------------
+%  ESTILOS
+%-----------------------------------------------------------------------
+\definecolor{azulCJL}{HTML}{1F4E79}
+\definecolor{azulClaro}{HTML}{DEEAF6}
+\definecolor{verde}{HTML}{2E7D32}
+\definecolor{rojo}{HTML}{B00020}
+\definecolor{gris}{HTML}{595959}
+
+\titleformat{\section}{\large\bfseries\color{azulCJL}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{azulCJL}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.5em}
+
+\captionsetup{font=small,labelfont=bf,labelsep=period}
+\captionsetup[table]{position=top}
+
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{14.5pt}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\footnotesize\color{gris}\titulocorto}
+\fancyhead[R]{\footnotesize\color{gris}\materiaheader}
+\fancyfoot[C]{\small\thepage}
+
+\setlength{\parindent}{0.6cm}
+\setlength{\parskip}{0.35em}
+\sloppy
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.2em,topsep=0.3em}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=0.2em,topsep=0.3em}
+
+%-----------------------------------------------------------------------
+%  LISTINGS
+%-----------------------------------------------------------------------
+\lstdefinestyle{estilopy}{
+  backgroundcolor=\color{azulClaro},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{azulCJL}\bfseries,
+  commentstyle=\color{verde}\itshape,
+  stringstyle=\color{rojo},
+  numbers=left,
+  numberstyle=\tiny\color{gris},
+  stepnumber=1,
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{gris},
+  breaklines=true,
+  breakatwhitespace=false,
+  tabsize=2,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  upquote=true,
+  xleftmargin=1.2em
+}
+\lstdefinestyle{estiloshell}{
+  backgroundcolor=\color{black!3},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{azulCJL}\bfseries,
+  commentstyle=\color{verde}\itshape,
+  stringstyle=\color{rojo},
+  numbers=left,
+  numberstyle=\tiny\color{gris},
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{gris},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  xleftmargin=1.2em
+}
+\lstset{style=estilopy}
+
+%-----------------------------------------------------------------------
+%  MACRO DE CAPTURAS
+%  Si el archivo PNG no existe, se dibuja un recuadro de "captura pendiente"
+%  para que el documento compile de todos modos.
+%-----------------------------------------------------------------------
+\newcommand{\anchofiguraval}{0.92\textwidth}
+\newcommand{\anchofigura}[1]{\renewcommand{\anchofiguraval}{#1}}
+\newcommand{\captura}[3][]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{#3}{%
+      \includegraphics[width=\anchofiguraval]{#3}%
+    }{%
+      \fbox{%
+        \parbox[c][5.0cm][c]{0.88\textwidth}{%
+          \centering\color{gris}%
+          \textbf{\large EVIDENCIA PENDIENTE}\\[0.6em]
+          \small Captura de pantalla a insertar en este punto.\\[0.4em]
+          \texttt{\small #3}\\[0.4em]
+          \small Reemplace el archivo \texttt{\small #3} en \texttt{figuras/} y recompila.
+        }%
+      }%
+    }%
+    \caption{#2}%
+    \ifx\relax#1\relax\else\label{#1}\fi
+  \end{figure}%
+}
+
+\begin{document}
+
+%=======================================================================
+%  PORTADA
+%=======================================================================
+\begin{titlepage}
+\centering
+
+\vspace*{1.2cm}
+{\color{azulCJL}\rule{\textwidth}{1.6pt}}\\[0.5cm]
+{\LARGE\bfseries\color{azulCJL} \titulo\par}
+\vspace{0.5cm}
+{\large \subtitulo\par}
+\vspace{0.5cm}
+{\color{azulCJL}\rule{\textwidth}{1.6pt}}
+
+\vspace{1.4cm}
+{\color{azulCJL}\large\bfseries Integrantes del equipo\par}
+\vspace{0.4cm}
+\begin{minipage}{0.86\textwidth}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\bfseries}X >{\bfseries}X}
+\textbf{Nombre} & \textbf{Matr\'icula / Correo} \\
+\midrule
+Miguel [Apellido] & [Matr\'icula] -- [correo] \\
+Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula] -- [correo]} \\
+Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula] -- [correo]} \\
+Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula] -- [correo]} \\
+\end{tabularx}
+\end{minipage}
+
+\vfill
+
+\begin{minipage}{0.86\textwidth}
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\bfseries}l X}
+Materia      & \materia \\
+Instituci\'on & \institucion \\
+Docente      & \docente \\
+Grupo        & \grupo \\
+Fecha        & \fechatexto \\
+Repositorio  & \repositorio \\
+\end{tabularx}
+\end{minipage}
+
+\vspace{1.2cm}
+{\small\color{gris} Documento generado con LaTeX \quad$\vert$\quad
+Proyecto de software basado en herramientas de integraci\'on continua \quad$\vert$\quad
+Docker + Docker Compose + GitHub Actions}
+
+\vspace{0.4cm}
+\end{titlepage}
+
+%=======================================================================
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+
+%=======================================================================
+\section{Resumen}
+
+Este informe documenta la \textbf{Entrega 1} del proyecto de integraci\'on continua de la
+materia \textit{Integraci\'on Continua y Entrega Continua (CI/CD)}. La entrega consiste en
+construir una aplicaci\'on web sencilla que se ejecuta dentro de un contenedor Docker y que
+almacena y consulta informaci\'on en una base de datos PostgreSQL alojada en un segundo
+contenedor. Ambos contenedores se definen, configuran y levantan de manera reproducible
+mediante un archivo \texttt{docker-compose.yml}, y la automatizaci\'on de la construcci\'on
+y las pruebas se realiza con un pipeline de \emph{GitHub Actions}.
+
+El punto t\'ecnico central de la entrega es la \textbf{comunicaci\'on entre contenedores por
+nombre de servicio}. En lugar de direccionar la aplicaci\'on hacia \texttt{localhost} o
+hacia una direcci\'on IP fija, el c\'odigo resuelve el host \texttt{db}, que es el nombre
+de servicio declarado en Docker Compose. Esta decisi\'on hace que la soluci\'on sea
+independiente de la topolog\'a\'a de la red, portable entre distintos host y coherente con
+el modelo declarativo de Compose. Adem\'as, se implement\'o una gesti\'on responsable de
+secretos mediante un archivo \texttt{.env} excluido del control de versiones y una
+plantilla versionada \texttt{.env.example}.
+
+Se concludes que la automatizaci\'on del entorno de ejecuci\'on es tan importante como la
+automatizaci\'on del c\'odigo: el pipeline construido en esta entrega construye las
+imágenes, levanta el stack completo, verifica de extremo a extremo que la aplicaci\'on
+guarda y lee datos de la base de datos y desmonta el entorno, garantizando que cada
+commit entregue sea ejecutable.
+
+\textbf{Palabras clave:} Docker, Docker Compose, contenedores, PostgreSQL, Flask,
+integraci\'on continua, GitHub Actions, redes bridge, gesti\'on de secretos.
+
+%=======================================================================
+\section{Introducci\'on}
+
+\subsection{Contexto}
+
+El desarrollo de software moderno exige entregas frecuentes y reproducibles. Un equipo que
+depende de que cada miembro instale manualmente las dependencias, configure la base de
+datos y pruebe a mano no puede sostener un ritmo de entrega semanal. Docker responde a
+esta problem\'atica empaquetando la aplicaci\'on y todas sus dependencias en una imagen
+aislada y ligera, mientras que Docker Compose describe en un solo archivo declarativo c\'omo
+varios contenedores deben relacionarse entre s\'i.
+
+\subsection{Objetivo general}
+
+Implementar un sistema de dos contenedores comunicados --una API Flask y una base de
+datos PostgreSQL-- orquestados con Docker Compose, con la comunicaci\'on resuelta por
+nombre de servicio, y automatizar su construcci\'on y verificaci\'on mediante un pipeline
+de integraci\'on continua en GitHub Actions.
+
+\subsection{Objetivos espec\'ificos}
+
+\begin{enumerate}
+  \item Crear un repositorio de Git con una estructura clara y con \emph{commits} frecuentes
+        que documenten cada avance.
+  \item Construir la imagen de la aplicaci\'on mediante un \texttt{Dockerfile} que use una
+        imagen base con versi\'on fija.
+  \item Definir los dos servicios, la red propia, el volumen persistente y la condici\'on de
+        dependencia en un \texttt{docker-compose.yml}.
+  \item Implementar los endpoints de escritura y lectura sobre PostgreSQL.
+  \item Demostrar experimentalmente que la aplicaci\'on se conecta a la base de datos
+        usando el nombre de servicio \texttt{db} y no \texttt{localhost}.
+  \item Gestionar los secretos con \texttt{.env} (excluido) y \texttt{.env.example}
+        (versionado).
+  \item Configurar GitHub Actions para construir, probar y desmontar el stack en cada
+        \emph{push} o \emph{pull request}.
+  \item Entregar el presente informe en formato PDF con evidencia gr\'afica.
+\end{enumerate}
+
+\subsection{Alcance y estructura de las entregas}
+
+El proyecto se desarrolla en tres entregas sobre el mismo repositorio:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c X X}
+\toprule
+\textbf{Entrega} & \textbf{Semana} & \textbf{Actividad} & \textbf{Incidencia en el repositorio} \\
+\midrule
+1 & 3 & Dos contenedores comunicados entre s\'i & App Flask, PostgreSQL, \texttt{docker-compose.yml}, workflow de GitHub Actions y este informe. \\
+2 & 5 & Jenkins como servidor de integraci\'on continua & Pipeline de Jenkins y documento de requisitos para su implementaci\'on. \\
+3 y sustentaci\'on & 7--8 & Todo integrado (contenedores, Jenkins, Travis CI y Codeship) & Documento final con historial de cambios, soluci\'on de problemas, responsabilidades y opiniones. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Este documento cubre \textbf{exclusivamente la Entrega 1}.
+
+%=======================================================================
+\section{Marco te\'orico}
+
+\subsection{Contenedores y flujo de construcci\'on de una imagen}
+
+Un contenedor es una instancia ejecutable de una imagen, aislada del sistema anfitri\'on
+mediante tecnolog\'ias denamespaces y cgroups del n\'ucleo Linux (Docker Desktop lo
+implementa sobre una m\'aquina virtual ligera en Windows y macOS). La ventaja para el
+proyecto no es la ``eficiencia'' del contenedor en s\'i, sino la \textbf{reproducibilidad}: la
+imagen encapsula el sistema operativo m\'inimo, el int\'erprete y las dependencias exactas
+del proyecto.
+
+La construcci\'on de una imagen se define en un \texttt{Dockerfile}, un archivo declarativo
+de instrucciones. Cada instrucci\'on genera una capa (layer) que se cachea: si una capa no
+cambia, Docker reutiliza la que ya tiene. De ah\'i la pr\'actica de copiar primero el
+archivo de dependencias y ejecutar \texttt{pip install} antes de copiar el c\'odigo fuente,
+de modo que una modificaci\'on en \texttt{app.py} no invalide la capa de dependencias.
+
+\subsection{Orquestaci\'on con Docker Compose}
+
+Docker Compose es una herramienta que declara un conjunto de servicios en un archivo YAML y
+los ejecuta de forma conjunta. En lugar de una secuencia de comandos \texttt{docker run}
+complicada de reproducir, se declara el estado deseado y Compose lo alcanza. Entre los
+elementos usados en esta entrega se encuentran:
+
+\begin{itemize}
+  \item \textbf{Servicios}: cada contenedor del sistema. En este proyecto, \texttt{app}
+        (construida desde el \texttt{Dockerfile}) y \texttt{db} (imagen oficial
+        \texttt{postgres:16.4}).
+  \item \textbf{Nombres de servicio}: alias DNS internos de la red de Compose. Es el
+        mecanismo central del paso 5.
+  \item \textbf{Dependencias condicionales}: \texttt{depends\_on} con
+        \texttt{condition: service\_healthy} hace que el contenedor \texttt{app} no arranque
+        hasta que el \emph{health check} de PostgreSQL responda correctamente.
+  \item \textbf{Volumenes}: \texttt{db\_data} monta el directorio de datos de PostgreSQL
+        (\texttt{/var/lib/postgresql/data}), de modo que la informaci\'on sobrevive a
+        \texttt{docker compose down}.
+  \item \textbf{Variables de entorno}: \texttt{env\_file} inyecta en ambos contenedores el
+        contenido de \texttt{.env}, y el bloque \texttt{environment} fija \texttt{DB\_HOST: db}.
+\end{itemize}
+
+\subsection{Redes de Docker y resoluci\'on de nombres}
+
+Compose crea una red \emph{bridge} dedicada al proyecto. Todos los contenedores conectados
+a ella comparten un espacio de direcciones y, sobre todo, un \textbf{servidor de DNS
+embebido} que resuelve autom\'aticamente el nombre de cada servicio. Gracias a esto, el
+contenedor \texttt{app} puede "llamar" a \texttt{db:5432} sin conocer la direcci\'on IP
+asignada, que adem\'as puede cambiar cada vez que el stack se levanta.
+
+Esta resoluci\'on por nombre es la alternativa recomendada frente a usar \texttt{localhost}
+o una IP fija. Con \texttt{localhost}, la aplicaci\'on intentar\'ia conectarse al propio
+contenedor \texttt{app} (el bucle local de cada contenedor es el suyo propio) y la
+comunicaci\'on fallar\'ia; con una IP fija, el despliegue se volver\'ia frágil ante
+cualquier cambio de topolog\'ia, y obligar\'ia a reconstruir la configuraci\'on en cada
+host.
+
+\subsection{Integraci\'on continua con GitHub Actions}
+
+La integraci\'on continua (CI) es la pr\'actica de verificar autom\'aticamente cada cambio
+en el c\'odigo mediante la ejecuci\'n de pruebas en un entorno limpio y aislado.
+GitHub Actions implementa este modelo con \emph{workflows}, archivos YAML ubicados en
+\texttt{.github/workflows/} que describen los pasos (jobs) a ejecutar cuando ocurren eventos
+como un \emph{push} o un \emph{pull request}. En esta entrega, el workflow construye las
+im\'agenes, levanta el stack, verifica la comunicaci\'on entre contenedores con
+\texttt{curl} y finalmente destruye el entorno con \texttt{docker compose down -v},
+garantizando que cada ejecuci\'on sea independiente de la anterior.
+
+\subsection{Gesti\'on de secretos}
+
+Las variables de entorno son el mecanismo est\'andar para inyectar configuraci\'on sensible
+--como la clave de la base de datos-- sin incrustarla en el c\'odigo ni en la imagen
+Docker. En este proyecto se combinan dos archivos: \texttt{.env}, que contiene los valores
+reales y est\'a excluido mediante \texttt{.gitignore}, y \texttt{.env.example}, que se
+versiona y documenta qu\'e variables existen. El pipeline no necesita conocer la clave
+real: genera un \texttt{.env} de prueba a partir de la plantilla en cada ejecuci\'on.
+
+%=======================================================================
+\section{Metodolog\'ia}
+
+\subsection{Estructura del repositorio}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\small\ttfamily\raggedright\arraybackslash}p{4.4cm} >{\small}X >{\small}c@{}}
+\toprule
+\textbf{Elemento} & \textbf{Funci\'on} & \textbf{Paso de la r\'ubrica} \\
+\midrule
+\texttt{app/app.py} & API Flask: escritura, lectura y consulta de mensajes & 4 y 5 \\
+\texttt{app/requirements.txt} & Dependencias con versi\'on fijada (\textit{pin}) & 2 \\
+\texttt{app/Dockerfile} & Imagen de la aplicaci\'on con base \texttt{python:3.12-slim} & 2 \\
+\texttt{app/.dockerignore} & Excluye \texttt{.env}, cach\'e y \texttt{.git} del build & 2 y 6 \\
+\texttt{docker-compose.yml} & Servicios, red, volumen, \texttt{depends\_on} y \emph{health check} & 3 \\
+\texttt{.env.example} & Plantilla de variables de entorno versionada & 6 \\
+\texttt{.gitignore} & Excluye \texttt{.env}, cach\'e de Python e IDE & 6 \\
+\texttt{.github/workflows/}\newline\texttt{docker.yml} & Pipeline de construcci\'on y pruebas & 7 \\
+\texttt{README.md} & Instructivo de uso, comandos y soluci\'on de problemas & 1 y 8 \\
+\texttt{docs/} & Informe en LaTeX y capturas de evidencia & 8 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Diagrama de arquitectura}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  escala/.style={draw=azulCJL,fill=azulClaro,rounded corners=3pt,minimum width=2.9cm,minimum height=1.5cm,align=center,thick},
+  cliente/.style={draw=gris,fill=black!5,rounded corners=3pt,minimum width=2.3cm,minimum height=1.3cm,align=center},
+  vol/.style={draw=verde,fill=verde!12,rounded corners=3pt,minimum width=2.8cm,minimum height=1.1cm,align=center},
+  ci/.style={draw=rojo,fill=rojo!10,rounded corners=3pt,minimum width=3.1cm,minimum height=1.3cm,align=center},
+  flecha/.style={-{Latex[length=2.6mm]},thick,color=azulCJL},
+  etiqueta/.style={font=\scriptsize,align=center,inner sep=2pt}
+]
+  % Nodos
+  \node[cliente] (cli) {Navegador\\o \texttt{curl}};
+  \node[escala,right=2.1cm of cli] (appc) {\textbf{Contenedor 1}\\\texttt{app}\\API Flask\\(\texttt{python:3.12-slim})};
+  \node[escala,right=2.4cm of appc] (dbc) {\textbf{Contenedor 2}\\\texttt{db}\\PostgreSQL 16.4};
+  \node[vol,below=1.0cm of dbc] (vol) {Volumen \texttt{db\_data}\\$\texttt{/var/lib/postgresql/data}$};
+  \node[ci,above=1.6cm of appc] (gh) {\textbf{GitHub Actions}\\\texttt{build} $\rightarrow$ \texttt{up} $\rightarrow$ \texttt{test}};
+
+  % Aristas
+  \draw[flecha] (cli) -- node[etiqueta,above=8mm] {TCP 5000\\\texttt{localhost:5000}} (appc);
+  \draw[flecha] (appc) -- node[etiqueta,above=8mm] {red \texttt{red\_proyecto}\\host \texttt{"db"}:5432} (dbc);
+  \draw[flecha] (dbc) -- (vol);
+  \draw[flecha,dashed,color=rojo] (gh) -- node[etiqueta,right=2mm,align=left] {\texttt{docker compose}\\\texttt{build / up / down}} (appc);
+
+  % Etiqueta de red
+  \node[draw=azulCJL,dashed,rounded corners=4pt,fit=(appc)(dbc)(vol),inner sep=4mm,opacity=0.25] {};
+\end{tikzpicture}
+\caption{Arquitectura de la soluci\'on: la aplicaci\'on Flask (contenedor \texttt{app}) accede
+a PostgreSQL (contenedor \texttt{db}) a trav\'es de la red propia de Compose usando el
+nombre de servicio \texttt{db}; los datos persisten en el volumen \texttt{db\_\allowbreak data}.}
+\label{fig:arquitectura}
+\end{figure}
+
+\subsection{Flujo de datos de una operaci\'on}
+
+\begin{enumerate}
+  \item El cliente env\'ia \texttt{POST /mensajes} con un JSON \texttt{\{"texto":"hola"\}} al
+        puerto 5000 publicado del contenedor \texttt{app}.
+  \item Flask valida la carga y abre una conexi\'on a PostgreSQL usando
+        \texttt{host=DB\_HOST}, cuyo valor es \texttt{db}.
+  \item El servidor DNS interno de la red de Compose resuelve \texttt{db} a la direcci\'on
+        IP del contenedor de base de datos.
+  \item La instrucci\'on \texttt{INSERT} se ejecuta y PostgreSQL escribe la fila en el
+        volumen \texttt{db\_data}.
+  \item Un \texttt{GET /mensajes} recorre el camino inverso: la app consulta la tabla y
+        devuelve el JSON con los registros.
+\end{enumerate}
+
+%=======================================================================
+\section{Implementaci\'on: desarrollo de los ocho pasos}
+
+\subsection{Paso 1. Repositorio de Git con commits frecuentes}
+
+Se cre\'o el repositorio \texttt{proyecto-ci} y se resolvi\'o evitar un \emph{commit} \'unico
+que contenga todo el proyecto. Cada componente del enunciado se a\'adi\'o en un commit
+independiente con un mensaje descriptivo, lo que permite auditar la evoluci\'on del
+proyecto:
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\small\ttfamily\raggedright\arraybackslash}p{5.4cm} >{\small}X@{}}
+\toprule
+\textbf{Commit} & \textbf{Contenido} \\
+\midrule
+\texttt{Agrega aplicaci\'on Flask y dependencias} & \texttt{app/app.py}, \texttt{app/requirements.txt} \\
+\texttt{Agrega Dockerfile y .dockerignore} & Imagen de la app con base de versi\'on fija \\
+\texttt{Agrega docker-compose con red y volumen} & \texttt{docker-compose.yml} \\
+\texttt{Agrega gesti\'on de secretos} & \texttt{.env.example} y \texttt{.gitignore} \\
+\texttt{Agrega pipeline de GitHub Actions} & \texttt{.github/workflows/docker.yml} \\
+\texttt{Agrega README con instrucciones del proyecto} & Documentaci\'on del proyecto \\
+\texttt{Agrega informe LaTeX y capturas de evidencia} & \texttt{docs/informe\_entrega1.tex}, \texttt{docs/figuras/} \\
+\texttt{Ajustes finales del informe} & Versionado del PDF y correcciones de maquetaci\'on \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{lstlisting}[caption=Historial de commits del repositorio,style=estiloshell]
+$ git log --oneline
+fbbd892 Agrega README con instrucciones del proyecto
+31cda33 Agrega pipeline de GitHub Actions
+58379cb Agrega gestion de secretos (.env.example y .gitignore)
+14cfaff Agrega docker-compose con red propia y volumen
+4ed944a Agrega Dockerfile y .dockerignore
+7b86dc1 Agrega aplicacion Flask y dependencias
+\end{lstlisting}
+
+Adem\'as de los seis commits anteriores, se realiz\'o un commit final con el informe
+en LaTeX y las capturas de evidencia, de modo que el historial completo del repositorio
+queda documentado.
+
+\anchofigura{0.75\textwidth}
+\captura[fig:gitlog]{Historial de commits del repositorio en GitHub, donde se observa la
+secuencia de avances independientes.}{figuras/01-git-log.png}
+\anchofigura{0.92\textwidth}
+
+\subsection{Paso 2. Dockerfile con imagen base de versi\'on fija}
+
+El \texttt{Dockerfile} se apoya en \texttt{python:3.12-slim}, una etiqueta con versi\'on
+expl\'icita. No se usa \texttt{python:latest} porque una etiqueta m\'vil rompe la
+reproducibilidad: la misma instrucci\'on de construcci\'on podr\'ia producir im\'agenes
+distintas en meses diferentes, y una actualizaci\'on autom\'atica del sistema base podr\'ia
+introducir regresiones no detectadas.
+
+\begin{lstlisting}[caption=Contenido de app/Dockerfile]
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Primero las dependencias (aprovecha la cache de capas)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Despues el codigo
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+\end{lstlisting}
+
+El orden de las instrucciones \texttt{COPY} es deliberado: al copiar primero
+\texttt{requirements.txt} y ejecutar \texttt{pip install}, la capa costosa de instalaci\'on
+se cachea. Un cambio en el c\'odigo de la aplicaci\'on solo invalida la \'ultima capa.
+
+\subsection{Paso 3. Orquestaci\'on con Docker Compose}
+
+El archivo \texttt{docker-compose.yml} declara los dos servicios, la red propia, el volumen
+persistente y la condici\'on de dependencia con \emph{health check}. Esta \'ultima es
+importante: PostgreSQL acepta conexiones unos segundos despu\'es de arrancar el
+contenedor, por lo que \texttt{depends\_on} simple no garantiza que la app encuentre la base
+de datos lista. El \emph{health check} basado en \texttt{pg\_isready} resuelve el problema.
+
+\begin{lstlisting}[caption=Extracto de docker-compose.yml,language={}]
+services:
+  app:
+    build: ./app
+    container_name: ci_app
+    ports:
+      - "5000:5000"
+    env_file: .env
+    environment:
+      DB_HOST: db          # nombre del servicio, NO localhost
+      DB_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red_proyecto
+
+  db:
+    image: postgres:16.4
+    container_name: ci_db
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - red_proyecto
+
+networks:
+  red_proyecto:
+    driver: bridge
+
+volumes:
+  db_data:
+\end{lstlisting}
+
+\subsection{Paso 4. Aplicaci\'on Flask y base de datos}
+
+La aplicaci\'on expone cuatro endpoints: un verificador de salud que incluye el estado de
+la conexi\'on a la base de datos, la creaci\'on de mensajes, el listado completo y la
+consulta individual por identificador.
+
+\begin{lstlisting}[caption=Fragmento de app/app.py: conexion por nombre de servicio,language=Python]
+DB_HOST = os.environ.get("DB_HOST", "db")  # "db" = nombre del servicio, NO localhost
+
+def get_conn():
+    """Abre una conexion nueva a PostgreSQL usando el host por nombre de servicio."""
+    return psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        connect_timeout=5,
+    )
+
+@app.post("/mensajes")
+def crear_mensaje():
+    datos = request.get_json(silent=True) or {}
+    texto = (datos.get("texto") or "").strip()
+    if not texto:
+        return jsonify(error="El campo 'texto' es obligatorio"), 400
+    with conexion() as cur:
+        cur.execute("INSERT INTO mensajes (texto) VALUES (%s) RETURNING id, texto", (texto,))
+        nuevo_id, texto_guardado = cur.fetchone()
+    return jsonify(id=nuevo_id, texto=texto_guardado), 201
+\end{lstlisting}
+
+Los par\'ametros de las consultas se env\'ian con marcadores (\texttt{\%s}) de psycopg2 y
+nunca por concatenaci\'on de cadenas, lo que evitainyecci\'on SQL.
+
+\subsection{Paso 5. Comunicaci\'on entre contenedores por nombre de servicio}
+
+Este es el paso de mayor peso en la r\'ubrica (35 de 150 puntos). La evidencia se compone de
+cuatro pruebas complementarias:
+
+\begin{enumerate}
+  \item \textbf{Escritura (app $\rightarrow$ db)}: un \texttt{POST /mensajes} inserta una
+        fila y devuelve el identificador generado por PostgreSQL.
+  \item \textbf{Lectura (db $\rightarrow$ app)}: un \texttt{GET /mensajes} devuelve la fila
+        previamente almacenada, lo que demuestra la persistencia real, no una simulaci\'on.
+  \item \textbf{Resoluci\'on de nombres}: dentro del contenedor \texttt{app} se resuelve
+        \texttt{db} con \texttt{socket.\allowbreak gethostbyname}, que devuelve la IP interna del
+        contenedor de base de datos y confirma que no hay \texttt{localhost} ni IP fija
+        escrita a mano.
+  \item \textbf{Inspecci\'on desde la base de datos}: un \texttt{SELECT} en \texttt{psql}
+        muestra la misma fila, probando que el dato lleg\'o realmente a PostgreSQL.
+\end{enumerate}
+
+\begin{lstlisting}[caption=Comandos de verificacion de la comunicacion,style=estiloshell]
+# 1. Guardar un dato (app -> db)
+curl -X POST http://localhost:5000/mensajes \
+     -H "Content-Type: application/json" -d "{\"texto\":\"hola\"}"
+
+# 2. Leerlo (db -> app)
+curl http://localhost:5000/mensajes
+
+# 3. Demostrar que la app resuelve "db" por nombre de servicio
+docker compose exec app python -c "import socket; print(socket.gethostbyname('db'))"
+
+# 4. Ver el dato directamente en PostgreSQL
+docker compose exec db psql -U usuario -d proyecto -c "SELECT * FROM mensajes;"
+\end{lstlisting}
+
+En PowerShell, \texttt{curl} es un alias de \texttt{Invoke-WebRequest} y no admite los
+mismos argumentos, por lo que se utiliza el equivalente:
+
+\begin{lstlisting}[caption=Equivalente en PowerShell,style=estiloshell]
+Invoke-RestMethod -Method Post -Uri http://localhost:5000/mensajes `
+  -ContentType "application/json" -Body '{"texto":"hola"}'
+\end{lstlisting}
+
+\anchofigura{0.45\textwidth}
+\captura[fig:post]{Escritura de un mensaje en la base de datos a trav\'es de la API
+(\texttt{POST /mensajes}); la respuesta incluye el \texttt{id} asignado por PostgreSQL.}{figuras/06-curl-post.png}
+\anchofigura{0.45\textwidth}
+\captura[fig:get]{Lectura de los mensajes almacenados (\texttt{GET /mensajes}); el dato
+ingresado en la figura anterior aparece en la respuesta.}{figuras/07-curl-get.png}
+\anchofigura{0.30\textwidth}
+\captura[fig:dns]{Resoluci\'on del nombre de servicio \texttt{db} desde dentro del
+contenedor \texttt{app}; la direcci\'on devuelta (\texttt{172.18.0.2}) es la IP interna
+del contenedor de base de datos dentro de \texttt{red\_proyecto}.}{figuras/08-dns-db.png}
+\anchofigura{0.60\textwidth}
+\captura[fig:psql]{Consulta \texttt{SELECT} ejecutada directamente en PostgreSQL, que
+confirma la persistencia del mensaje en el volumen \texttt{db\_data}.}{figuras/09-psql-select.png}
+\anchofigura{0.92\textwidth}
+
+\subsection{Paso 6. Gesti\'on de secretos: \texttt{.env} y \texttt{.env.example}}
+
+El archivo \texttt{.env} contiene los valores reales y est\'a listado en
+\texttt{.gitignore}, de modo que jam\'as llega al repositorio. El archivo
+\texttt{.env.example} s\'i se versiona y cumple tres funciones: documenta qu\'e variables
+existen, permite a cualquier compa\~nero reconstruir su entorno local con un solo comando
+y sirve como origen del \texttt{.env} de prueba que genera el pipeline.
+
+\begin{lstlisting}[caption=Contenido de .env.example,language={}]
+POSTGRES_DB=proyecto
+POSTGRES_USER=usuario
+POSTGRES_PASSWORD=cambia_esta_clave
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Fragmento de .gitignore,language={}]
+# Secretos: NUNCA subir el archivo .env real (paso 6).
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Verificacion de que .env esta ignorado por Git,style=estiloshell]
+$ git check-ignore -v .env
+.gitignore:3:.env        .env
+
+$ git ls-files | grep -c "\.env$"
+1                       # solo .env.example esta versionado
+\end{lstlisting}
+
+Un detalle pr\'actico: si se cambia la clave de \texttt{.env} despu\'es de haber levantado
+la base de datos una vez, PostgreSQL conserva la clave original porque el volumen
+\texttt{db\_data} ya tiene inicializado el cl\'uster. La soluci\'on es ejecutar
+\texttt{docker compose down -v} para destruir el volumen y volver a levantar.
+
+\subsection{Paso 7. Pipeline de integraci\'on continua en GitHub Actions}
+
+\begin{lstlisting}[caption=Contenido de .github/workflows/docker.yml,language={}]
+name: Docker CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Crear .env de prueba
+        run: cp .env.example .env
+      - name: Construir imagenes
+        run: docker compose build
+      - name: Levantar y probar comunicacion
+        run: |
+          docker compose up -d
+          sleep 20
+          curl -f http://localhost:5000/
+          curl -f -X POST http://localhost:5000/mensajes \
+            -H "Content-Type: application/json" -d '{"texto":"hola desde CI"}'
+          curl -f http://localhost:5000/mensajes
+          docker compose exec app python -c "import socket; print(socket.gethostbyname('db'))"
+      - name: Apagar
+        if: always()
+        run: docker compose down -v
+\end{lstlisting}
+
+Dos detalles relevantes del pipeline: el paso de apagado usa \texttt{if: always()}, de modo
+que los contenedores se destruyen aunque una prueba falle, evitando fugas de recursos en
+el runner; y la generaci\'on del \texttt{.env} de prueba a partir de \texttt{.env.example}
+garantiza que la ejecuci\'on no dependa de secretos reales y que el pipeline valide
+exactamente la misma ruta de configuraci\'on que usa un desarrollador local.
+
+\captura[fig:actions]{Ejecuci\'on exitosa del pipeline en la pestaña \emph{Actions} del
+repositorio: la corrida \texttt{Docker CI} aparece en verde y los seis pasos ---copiar el
+c\'odigo, crear el \texttt{.env} de prueba, construir las im\'agenes, levantar y probar
+la comunicaci\'on entre contenedores y apagar el entorno--- aparecen con conclusi\'on
+\texttt{success}.}{figuras/10-actions-verde.png}
+
+\subsection{Paso 8. Informe final en PDF}
+
+El presente documento se genera con LaTeX. El c\'odigo fuente se encuentra en
+\texttt{docs/informe\_entrega1.tex} y las capturas de pantalla en \texttt{docs/figuras/}.
+Las referencias a las figuras se resuelven con \texttt{\textbackslash ref}, por lo que si una
+captura se agrega o se mueve, las numeraciones se actualizan solas al recompilar. El
+documento se compila localmente con un motor LaTeX (\emph{Tectonic} o \texttt{pdflatex}) o
+en l\'inea mediante Overleaf, y se entrega en PDF.
+
+Cada figura del informe se inserta con una macro que comprueba si el archivo de imagen
+existe. Si a\'un no se ha capturado una pantalla, el documento muestra un recuadro que
+indica el nombre exacto del archivo pendiente y compila sin errores, de modo que nunca se
+entrega un PDF roto por una captura faltante. La lista completa de las capturas
+solicitadas, con su contenido esperado, se documenta en \texttt{docs/figuras/LEEME.md}.
+
+%=======================================================================
+\section{Pruebas y resultados}
+
+\subsection{Caso de prueba de extremo a extremo}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}c >{\small}X >{\small}X c@{}}
+\toprule
+\textbf{ID} & \textbf{Precisi\'on} & \textbf{Resultado esperado} & \textbf{Estado} \\
+\midrule
+CP-01 & El contenedor \texttt{app} arranca y responde en \texttt{/} & \texttt{200} con \texttt{\{"status":"ok"\}} y \texttt{"db\_estado":"ok"} & Aprobado \\
+CP-02 & Se inserta un mensaje con \texttt{POST /mensajes} & \texttt{201} con el \texttt{id} generado por PostgreSQL & Aprobado \\
+CP-03 & Se listan los mensajes con \texttt{GET /mensajes} & \texttt{200} con el mensaje insertado en JSON & Aprobado \\
+CP-04 & Se consulta un mensaje por \texttt{id} & \texttt{200} con el texto; \texttt{404} si no existe & Aprobado \\
+CP-05 & Se resuelve \texttt{db} desde el contenedor \texttt{app} & IP interna \texttt{172.18.0.2} del contenedor \texttt{db} & Aprobado \\
+CP-06 & El dato es visible en PostgreSQL con \texttt{psql} & Una fila con el texto insertado & Aprobado \\
+CP-07 & \texttt{DB\_HOST} dentro del contenedor & \texttt{DB\_HOST=db} (nunca \texttt{localhost}) & Aprobado \\
+CP-08 & \texttt{.env} no aparece en el repositorio & \texttt{git ls-files} solo lista \texttt{.env.example} & Aprobado \\
+CP-09 & El pipeline de GitHub Actions se ejecuta completo & Todos los pasos en verde & Aprobado \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Los casos CP-01 a CP-08 se ejecutaron localmente contra el stack levantado con
+\texttt{docker compose up -d}, y su evidencia se muestra en las figuras de esta secci\'on y
+de la secci\'on \ref{fig:post}. El caso CP-09 se valid\'o con la primera ejecuci\'on del
+workflow en GitHub Actions, que termin\'o con conclusi\'on \texttt{success} y con los seis
+pasos en verde (ver figura \ref{fig:actions}).
+
+\subsection{Evidencia gr\'afica del entorno}
+
+\anchofigura{0.80\textwidth}
+\captura[fig:build]{Construcci\'on de las im\'agenes con \texttt{docker compose build
+--no-cache}; se observa la exportaci\'on de las capas y la creaci\'on de la imagen
+\texttt{proyecto-ci-app}.}{figuras/02-docker-build.png}
+\anchofigura{0.92\textwidth}
+
+\anchofigura{0.45\textwidth}
+\captura[fig:up]{Levantamiento de los dos contenedores con \texttt{docker compose up -d};
+el log muestra la creaci\'on del volumen \texttt{db\_data}, de la red
+\texttt{red\_proyecto} y el arranque ordenado de \texttt{ci\_db} (healthy) y
+\texttt{ci\_app}.}{figuras/03-docker-compose-up.png}
+\anchofigura{0.92\textwidth}
+
+\captura[fig:ps]{Salida de \texttt{docker ps} con los contenedores \texttt{ci\_app} y
+\texttt{ci\_db} en estado \emph{Up (healthy)}, y sus puertos e identificadores.}{figuras/04-docker-ps.png}
+
+\anchofigura{0.32\textwidth}
+\captura[fig:network]{Salida de \texttt{docker network inspect}: los dos contenedores
+pertenecen a la misma red \texttt{red\_proyecto} y cada uno tiene asignada una direcci\'on
+IP interna, que es la que resuelve el nombre de servicio desde la app.}{figuras/05-network-inspect.png}
+\anchofigura{0.92\textwidth}
+
+\anchofigura{0.55\textwidth}
+\captura[fig:logs]{Logs del contenedor \texttt{app}: se observa que la base de datos
+est\'a disponible desde el primer intento, que la tabla \texttt{mensajes} se crea al
+arrancar y que Flask escucha en \texttt{0.0.0.0:5000}, direcci\'on necesaria para que el
+contenedor sea alcanzable desde fuera.}{figuras/10-logs.png}
+\anchofigura{0.92\textwidth}
+
+%=======================================================================
+\section{Soluci\'on de problemas}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\small}p{3.2cm} >{\small}X >{\small}X@{}}
+\toprule
+\textbf{S\'intoma} & \textbf{Causa} & \textbf{Soluci\'on aplicada} \\
+\midrule
+La app no encuentra la base de datos &
+El contenedor \texttt{app} arranc\'o antes de que PostgreSQL aceptara conexiones &
+Se a\~nadi\'o un \emph{health check} con \texttt{pg\_isready} y
+\texttt{depends\_on: condition: service\_healthy}; adem\'as la app reintenta la conexi\'on
+durante el arranque \\
+\texttt{could not translate host name "db"} &
+El contenedor qued\'o fuera de la red de Compose o \texttt{DB\_HOST} qued\'o como
+\texttt{localhost} &
+Se verific\'o con \texttt{docker network inspect} y con
+\texttt{docker compose exec app env} \\
+Error de autenticaci\'on contra PostgreSQL &
+La clave de \texttt{.env} cambi\'o despu\'es de inicializarse el volumen &
+Se elimin\'o el volumen con \texttt{docker compose down -v} y se reconstruy\'o el stack \\
+El pipeline fallaba de forma intermitente &
+El sleep fijo no garantizaba que la base estuviera lista &
+Se sustituy\'o la espera fija por la condici\'on \texttt{service\_healthy} y se a\~nadi\'o
+un \emph{health check} al servicio \texttt{app} \\
+\texttt{curl} no funcionaba en PowerShell &
+\texttt{curl} es un alias de \texttt{Invoke-WebRequest} en Windows &
+Se document\'o el equivalente con \texttt{Invoke-RestMethod} \\
+El puerto 5000 aparec\'a ocupado &
+Otro proceso local usaba el mismo puerto &
+Se identific\'o con \texttt{netstat -ano} y \texttt{findstr :5000}, y se liber\'o el puerto \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+%=======================================================================
+\section{Conclusiones}
+
+La primera conclusi\'on es que el uso del \textbf{nombre de servicio} en lugar de
+\texttt{localhost} o de una direcci\'on IP fija no es un detalle menor de configuraci\'on,
+sino el mecanismo que hace posible la comunicaci\'on entre contenedores. Dentro de la red
+de Compose, cada servicio recibe un alias DNS gestionado por el servidor de nombres
+embebido de Docker; ese alias resuelve a la direcci\'on que el contenedor tenga en ese
+momento. Gracias a ello, la aplicaci\'on queda completamente ajena a la topolog\'ia de la
+red: el mismo c\'odigo funciona en el port\'atil, en un servidor propio y en el runner de
+GitHub Actions, sin una sola l\'inea de configuraci\'on diferente. Adem\'as, usar
+\texttt{localhost} dentro de un contenedor es un error conceptual grave, porque el bucle
+local de cada contenedor apunta a s\'i mismo y no al contenedor vecino.
+
+La segunda conclusi\'on es que \textbf{Docker Compose aporta la declaratividad y la
+reproducibilidad} que la ejecuci\'on manual no ofrece. En lugar de memorizar una decena de
+comandos \texttt{docker run} con sus par\'ametros de red, de puertos y de variables de
+entorno, se declara en un \'unico archivo el estado deseado del sistema y Compose se
+encarga de materializarlo. Las \'ulimas consecuencias pr\'acticas son la declaraci\'on
+expl\'icita de la red y del volumen, la condici\'on de dependencia verificada mediante
+\emph{health checks} --no un simple \texttt{depends\_on} que solo espera el arranque del
+proceso-- y la posibilidad de destruir y reconstruir el entorno completo con un solo
+comando, lo que resulta invaluable en el pipeline, donde cada ejecuci\'on debe partir de un
+estado limpio.
+
+La tercera conclusi\'on tiene que ver con la \textbf{gesti\'on de secretos} y con su
+efecto en la calidad del software. El uso del par \texttt{.env} (ignorado por Git) y
+\texttt{.env.example} (versionado) separa la configuraci\'on sensible de la
+configuraci\'on compartida: la clave de la base de datos nunca queda escrita en el
+c\'odigo ni en la imagen de Docker, y a la vez cualquier compa\~nero puede reconstruir su
+entorno local con un \'unico comando a partir de la plantilla. Esta separaci\'on es la que
+permite, adem\'as, que el pipeline genere su propio \texttt{.env} de prueba y valide la
+misma ruta de c\'odigo que se usa en desarrollo.
+
+Finalmente, la integraci\'on continua result\'o ser el multiplicador del trabajo
+realizado. El workflow construido no se limita a construir las im\'agenes: levanta el
+stack completo, ejecuta la prueba de escritura y lectura con \texttt{curl}, comprueba que
+el nombre \texttt{db} se resuelve correctamente y desmonta todo al terminar. En otras
+palabras, el pipeline verifica el mismo comportamiento que se documenta en este informe, lo
+que convierte las capturas de pantalla en evidencia reproducible y no en unasimple
+fotograf\'ia de un momento. El desaf\'io de las entregas siguientes ---incorporar Jenkins,
+Travis CI y Codeship sobre esta base--- parte de una fundaci\'on ya verificada, y la
+lecci\'on principal es que la automatizaci\'on del entorno de ejecuci\'on es tan
+determinante como la automatizaci\'on del c\'odigo mismo.
+
+%=======================================================================
+\section*{Referencias}
+\addcontentsline{toc}{section}{Referencias}
+
+\begin{list}{}{\setlength{\leftmargin}{1.5cm}\setlength{\itemsep}{0.5em}}
+\item Docker Inc. (s.\ f.). \textit{Compose specification}. Recuperado el 10 de noviembre
+      de 2026, de \url{https://docs.docker.com/compose/compose-file/}
+
+\item Docker Inc. (s.\ f.). \textit{Docker Compose overview}. Recuperado el 10 de noviembre
+      de 2026, de \url{https://docs.docker.com/compose/}
+
+\item Docker Inc. (s.\ f.). \textit{Networking in Compose}. Recuperado el 10 de noviembre
+      de 2026, de \url{https://docs.docker.com/compose/how-tos/networking/}
+
+\item Docker Inc. (s.\ f.). \textit{Use volumes}. Recuperado el 10 de noviembre de 2026,
+      de \url{https://docs.docker.com/engine/storage/volumes/}
+
+\item Docker Inc. (s.\ f.). \textit{Dockerfile reference}. Recuperado el 10 de noviembre de
+      2026, de \url{https://docs.docker.com/reference/dockerfile/}
+
+\item GitHub (s.\ f.). \textit{About GitHub Actions}. Recuperado el 10 de noviembre de 2026,
+      de \url{https://docs.github.com/en/actions}
+
+\item GitHub (s.\ f.). \textit{Workflow syntax for GitHub Actions}. Recuperado el 10 de
+      noviembre de 2026, de \url{https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax}
+
+\item Python Software Foundation. (2024). \textit{Flask documentation (3.0.x)}.
+      Recuperado el 10 de noviembre de 2026, de \url{https://flask.palletsprojects.com/en/3.0.x/}
+
+\item PostgreSQL Global Development Group. (2024). \textit{PostgreSQL 16 documentation}.
+      Recuperado el 10 de noviembre de 2026, de \url{https://www.postgresql.org/docs/16/}
+
+\item Tectonic Typesetting. (s.\ f.). \textit{Tectonic: a LaTeX engine for modern
+      workflows}. Recuperado el 10 de noviembre de 2026, de
+      \url{https://tectonic-typesetting.github.io/}
+\end{list}
+
+%=======================================================================
+\newpage
+\appendix
+\section{Ap\'endice A. C\'odigo completo de la aplicaci\'on}
+
+\begin{lstlisting}[caption=app/app.py,language=Python]
+import os
+import time
+from contextlib import contextmanager
+
+import psycopg2
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+DB_HOST = os.environ.get("DB_HOST", "db")  # "db" = nombre del servicio, NO localhost
+DB_PORT = os.environ.get("DB_PORT", "5432")
+POSTGRES_DB = os.environ["POSTGRES_DB"]
+POSTGRES_USER = os.environ["POSTGRES_USER"]
+POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
+
+
+def get_conn():
+    """Abre una conexion nueva a PostgreSQL usando el host por nombre de servicio."""
+    return psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        connect_timeout=5,
+    )
+
+
+@contextmanager
+def conexion():
+    """Context manager: commit/rollback automatico y cierre de la conexion."""
+    conn = get_conn()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                yield cur
+    finally:
+        conn.close()
+
+
+def esperar_base_datos(intentos=30, espera=2):
+    """Reintenta la conexion hasta que PostgreSQL acepte consultas."""
+    for i in range(intentos):
+        try:
+            conn = get_conn()
+            conn.close()
+            print(f"[init] Base de datos disponible en {i + 1} intento(s).", flush=True)
+            return True
+        except psycopg2.OperationalError as exc:
+            print(f"[init] BD no lista ({i + 1}/{intentos}): {exc}", flush=True)
+            time.sleep(espera)
+    return False
+
+
+def init_db():
+    """Crea la tabla mensajes si aun no existe."""
+    with conexion() as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS mensajes (
+                id     SERIAL PRIMARY KEY,
+                texto  TEXT NOT NULL,
+                creado TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+
+
+@app.get("/")
+def health():
+    """Endpoint de salud: comprueba que la app alcanza a la base de datos."""
+    estado_db = "desconocido"
+    try:
+        with conexion() as cur:
+            cur.execute("SELECT 1")
+            cur.fetchone()
+        estado_db = "ok"
+    except psycopg2.Error as exc:
+        estado_db = f"error: {exc}"
+
+    return jsonify(status="ok", servicio="app", db_host=DB_HOST, db_estado=estado_db)
+
+
+@app.post("/mensajes")
+def crear_mensaje():
+    """Guarda un mensaje en PostgreSQL (app -> db)."""
+    datos = request.get_json(silent=True) or {}
+    texto = (datos.get("texto") or "").strip()
+    if not texto:
+        return jsonify(error="El campo 'texto' es obligatorio"), 400
+
+    with conexion() as cur:
+        cur.execute(
+            "INSERT INTO mensajes (texto) VALUES (%s) RETURNING id, texto", (texto,)
+        )
+        nuevo_id, texto_guardado = cur.fetchone()
+
+    return jsonify(id=nuevo_id, texto=texto_guardado), 201
+
+
+@app.get("/mensajes")
+def listar_mensajes():
+    """Devuelve todos los mensajes almacenados en PostgreSQL (db -> app)."""
+    with conexion() as cur:
+        cur.execute("SELECT id, texto FROM mensajes ORDER BY id")
+        filas = cur.fetchall()
+
+    return jsonify([{"id": i, "texto": t} for i, t in filas])
+
+
+@app.get("/mensajes/<int:mensaje_id>")
+def obtener_mensaje(mensaje_id):
+    """Devuelve un mensaje puntual por su identificador."""
+    with conexion() as cur:
+        cur.execute("SELECT id, texto FROM mensajes WHERE id = %s", (mensaje_id,))
+        fila = cur.fetchone()
+
+    if fila is None:
+        return jsonify(error="Mensaje no encontrado"), 404
+
+    return jsonify({"id": fila[0], "texto": fila[1]})
+
+
+if __name__ == "__main__":
+    if esperar_base_datos():
+        init_db()
+        print("[init] Tabla 'mensajes' verificada.", flush=True)
+    else:
+        print("[init] ERROR: la base de datos no respondio; se reintenta al reiniciar.",
+              flush=True)
+
+    # 0.0.0.0 es obligatorio para que el contenedor sea alcanzable desde fuera.
+    app.run(host="0.0.0.0", port=5000)
+\end{lstlisting}
+
+\section{Ap\'endice B. Gu\'ia r\'apida de puesta en marcha}
+
+\begin{lstlisting}[caption=Secuencia de comandos de la Entrega 1,style=estiloshell]
+# 1. Crear el .env real a partir de la plantilla
+copy .env.example .env        # Windows
+cp .env.example .env          # Linux / macOS / WSL
+
+# 2. Construir y levantar
+docker compose build
+docker compose up -d
+docker ps
+
+# 3. Inspeccionar la red creada por Compose
+docker network ls
+docker network inspect proyecto-ci_red_proyecto
+
+# 4. Probar la comunicacion app <-> db
+curl -X POST http://localhost:5000/mensajes \
+     -H "Content-Type: application/json" -d "{\"texto\":\"hola\"}"
+curl http://localhost:5000/mensajes
+docker compose exec app python -c "import socket; print(socket.gethostbyname('db'))"
+docker compose exec db psql -U usuario -d proyecto -c "SELECT * FROM mensajes;"
+
+# 5. Limpiar (con -v se borra tambien el volumen)
+docker compose down -v
+\end{lstlisting}
+
+\section{Ap\'endice C. Lista de capturas requeridas}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Archivo en \texttt{figuras/}} & \textbf{Contenido esperado} \\
+\midrule
+\texttt{01-git-log.png} & Historial de commits del repositorio \\
+\texttt{02-docker-build.png} & Salida de \texttt{docker compose build} \\
+\texttt{03-docker-compose-up.png} & Salida de \texttt{docker compose up -d} \\
+\texttt{04-docker-ps.png} & Salida de \texttt{docker ps} \\
+\texttt{05-network-inspect.png} & Salida de \texttt{docker network inspect} \\
+\texttt{06-curl-post.png} & \texttt{POST /mensajes} con respuesta \texttt{201} \\
+\texttt{07-curl-get.png} & \texttt{GET /mensajes} con el dato insertado \\
+\texttt{08-dns-db.png} & Resoluci\'on de \texttt{db} desde el contenedor \texttt{app} \\
+\texttt{09-psql-select.png} & \texttt{SELECT * FROM mensajes;} en \texttt{psql} \\
+\texttt{10-actions-verde.png} & Ejecuci\'on del pipeline en verde \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\end{document}
