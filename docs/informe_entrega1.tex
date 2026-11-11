@@ -47,29 +47,17 @@
 \newcommand{\subtitulo}{Entrega 1 -- Aplicaci\'on Flask con PostgreSQL orquestada por Docker Compose}
 \newcommand{\materia}{\'Enfasis Profesional I (Integraci\'on Continua)}
 \newcommand{\materiaheader}{\'Enfasis Profesional I}
-\newcommand{\institucion}{Instituci\'on Educativa \textcolor{gray}{[completar]}}
 \newcommand{\docente}{Edward Reyes Corredor}
 \newcommand{\repositorio}{\url{https://github.com/SavitarADSO/-nfasis-Profesional-I-Integraci-n-Continua-}}
-\newcommand{\grupo}{Grupo \textcolor{gray}{[completar]}}
 \newcommand{\fechatexto}{10 de noviembre de 2026}
-
-% Integrantes: se edita SOLO esta linea.
-\newcommand{\integrantes}{%
-  Miguel \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
-  \textcolor{gray}{[Correo institucional]} \\[2pt]
-  Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
-  \textcolor{gray}{[Correo institucional]} \\[2pt]
-  Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
-  \textcolor{gray}{[Correo institucional]} \\[2pt]
-  Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula]} &
-  \textcolor{gray}{[Correo institucional]}
-}
+\newcommand{\integrante}{Miguel Angel Aguilar Luna}
+\newcommand{\correointegrante}{SavitarADSO -- \texttt{pee7491@gmail.com}}
 
 %-----------------------------------------------------------------------
 %  ESTILOS
 %-----------------------------------------------------------------------
-\definecolor{azulCJL}{HTML}{1F4E79}
-\definecolor{azulClaro}{HTML}{DEEAF6}
+\definecolor{azulCJL}{HTML}{000000}
+\definecolor{azulClaro}{HTML}{F2F2F2}
 \definecolor{verde}{HTML}{2E7D32}
 \definecolor{rojo}{HTML}{B00020}
 \definecolor{gris}{HTML}{595959}
@@ -182,18 +170,15 @@
 {\color{azulCJL}\rule{\textwidth}{1.6pt}}
 
 \vspace{1.4cm}
-{\color{azulCJL}\large\bfseries Integrantes del equipo\par}
+{\color{azulCJL}\large\bfseries Integrante\par}
 \vspace{0.4cm}
 \begin{minipage}{0.86\textwidth}
 \small
 \renewcommand{\arraystretch}{1.3}
 \begin{tabularx}{\textwidth}{>{\bfseries}X >{\bfseries}X}
-\textbf{Nombre} & \textbf{Matr\'icula / Correo} \\
+\textbf{Nombre} & \textbf{Correo / usuario} \\
 \midrule
-Miguel Angel Aguilar Luna & SavitarADSO -- \texttt{pee7491@gmail.com} \\
-Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula] -- [correo]} \\
-Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula] -- [correo]} \\
-Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula] -- [correo]} \\
+\integrante & \correointegrante \\
 \end{tabularx}
 \end{minipage}
 
@@ -203,10 +188,8 @@ Nombre \textcolor{gray}{[Apellido]} & \textcolor{gray}{[Matr\'icula] -- [correo]
 \centering
 \renewcommand{\arraystretch}{1.3}
 \begin{tabularx}{\textwidth}{>{\bfseries}l X}
-Materia      & \materia \\
-Instituci\'on & \institucion \\
+Módulo      & \materia \\
 Docente      & \docente \\
-Grupo        & \grupo \\
 Fecha        & \fechatexto \\
 Repositorio  & \repositorio \\
 \end{tabularx}
@@ -485,8 +468,7 @@ proyecto:
 \texttt{Agrega pipeline de GitHub Actions} & \texttt{.github/workflows/docker.yml} \\
 \texttt{Agrega README con instrucciones del proyecto} & Documentaci\'on del proyecto \\
 \texttt{Agrega informe LaTeX y capturas de evidencia} & \texttt{docs/informe\_entrega1.tex}, \texttt{docs/figuras/} \\
-\texttt{Actualiza los datos de la portada del informe} & Datos de la portada y resultados de las pruebas \\
-\texttt{Actualiza la evidencia del historial de commits} & Captura del \texttt{git log} y figura del pipeline \\
+\texttt{Ajustes finales del informe} & Portada, datos de la portada y formato del documento \\
 \texttt{Ajustes finales del informe} & Versionado del PDF y correcciones de maquetaci\'on \\
 \bottomrule
 \end{tabularx}
@@ -502,10 +484,10 @@ fbbd892 Agrega README con instrucciones del proyecto
 7b86dc1 Agrega aplicacion Flask y dependencias
 \end{lstlisting}
 
-Adem\'as de los seis commits anteriores, se realizaron tres commits finales con el
-informe en LaTeX, las capturas de evidencia y los datos de la portada. De este modo el
-historial completo del repositorio queda documentado y cada commit refleja un avance
-concreto del proyecto.
+Adem\'as de los seis commits anteriores, se realizaron commits finales con el informe en
+LaTeX, las capturas de evidencia y los \'ultimos ajustes de portada y formato. De este
+modo el historial completo del repositorio queda documentado y cada commit refleja un
+avance concreto del proyecto.
 
 \anchofigura{0.75\textwidth}
 \captura[fig:gitlog]{Historial de commits del repositorio en GitHub, donde se observa la
