@@ -1,0 +1,22 @@
+# Secretos: NUNCA subir el archivo .env real (paso 6).
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Archivos auxiliares de LaTeX (el PDF final SI se versiona como evidencia)
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.toc
+docs/figuras/salida/
