@@ -1,0 +1,51 @@
+# Dos contenedores que se comunican por el NOMBRE DEL SERVICIO "db".
+# Levantar con:  docker compose up -d
+services:
+  app:
+    build: ./app
+    container_name: ci_app
+    ports:
+      - "5000:5000"
+    env_file: .env
+    environment:
+      # CLAVE: nombre del servicio de Compose, no localhost ni IP fija.
+      DB_HOST: db
+      DB_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:5000/')\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - red_proyecto
+    restart: unless-stopped
+
+  db:
+    image: postgres:16.4
+    container_name: ci_db
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - red_proyecto
+    restart: unless-stopped
+
+networks:
+  red_proyecto:
+    driver: bridge
+
+volumes:
+  db_data:
