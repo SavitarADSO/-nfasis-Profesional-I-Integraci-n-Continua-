@@ -1,0 +1,44 @@
+name: Docker CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Copiar código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Crear .env de prueba (a partir de .env.example)
+        run: cp .env.example .env
+
+      - name: Construir imágenes
+        run: docker compose build
+
+      - name: Levantar contenedores y probar comunicación app <-> db
+        run: |
+          docker compose up -d
+          # Esperar a que la API responda (health check del contenedor app)
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5000/ > /dev/null; then break; fi
+            sleep 2
+          done
+          echo "--- health ---"
+          curl -sf http://localhost:5000/
+          echo "--- POST /mensajes (app -> db) ---"
+          curl -sf -X POST http://localhost:5000/mensajes \
+            -H "Content-Type: application/json" \
+            -d '{"texto":"hola desde CI"}'
+          echo "--- GET /mensajes (db -> app) ---"
+          curl -sf http://localhost:5000/mensajes
+          echo "--- Resolver 'db' por nombre de servicio ---"
+          docker compose exec app python -c "import socket; print(socket.gethostbyname('db'))"
+
+      - name: Apagar contenedores y eliminar volúmenes
+        if: always()
+        run: docker compose down -v
