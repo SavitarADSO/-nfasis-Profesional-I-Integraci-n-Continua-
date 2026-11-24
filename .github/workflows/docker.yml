@@ -18,11 +18,11 @@ jobs:
         run: cp .env.example .env
 
       - name: Construir imágenes
-        run: docker compose build
+        run: docker compose build app
 
       - name: Levantar contenedores y probar comunicación app <-> db
         run: |
-          docker compose up -d
+          docker compose up -d app db
           # Esperar a que la API responda (health check del contenedor app)
           for i in $(seq 1 30); do
             if curl -sf http://localhost:5000/ > /dev/null; then break; fi
