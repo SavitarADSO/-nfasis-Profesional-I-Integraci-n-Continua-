@@ -171,6 +171,7 @@ este montaje a un servidor o red no confiable.
 \section{Arquitectura}
 \begin{figure}[H]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
   node distance=1.5cm and 1.7cm,
   servicio/.style={draw,rounded corners,align=center,minimum width=3.0cm,minimum height=1.2cm},
@@ -184,7 +185,8 @@ este montaje a un servidor o red no confiable.
 \draw[flecha] (git) -- node[above,align=center]{Git HTTPS\\Poll SCM} (jenkins);
 \draw[flecha] (jenkins) -- node[right,align=left]{Docker CLI\\socket del motor} (app);
 \draw[flecha] (app) -- node[below,align=center]{DNS Compose: db:5432} (db);
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Vista general de la arquitectura de la Entrega 2.}
 \end{figure}
 
@@ -205,7 +207,7 @@ FROM jenkins/jenkins:2.541.3-lts-jdk17
 
 USER root
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends docker.io \
+    && apt-get install -y --no-install-recommends docker.io docker-cli git \
     && rm -rf /var/lib/apt/lists/*
 USER jenkins
 \end{lstlisting}
@@ -231,11 +233,13 @@ jenkins:
 \subsection{Configuraci\'on inicial}
 En el primer inicio, Jenkins solicita la contrase\~na temporal almacenada en
 \texttt{/var/jenkins\_home/secrets/initialAdminPassword}. Despu\'es de desbloquear
-el servidor se instalan los plugins sugeridos y se crea un usuario administrador.
-La contrase\~na no forma parte del repositorio ni debe aparecer en las capturas.
+el servidor se instalaron los plugins sugeridos. Para esta pr\'actica local se
+continu\'o con la cuenta administrativa predeterminada \texttt{admin}; la clave
+inicial se consulta dentro del contenedor y no se versiona ni se incluye en las
+capturas. En un entorno compartido se debe crear una cuenta personal y cambiar
+la clave temporal.
 
-\captura{figuras/entrega2/03-unlock-jenkins.png}{Asistente de desbloqueo con la contrase\~na oculta.}
-\captura{figuras/entrega2/04-jenkins-inicializado.png}{Panel principal tras la configuraci\'on inicial.}
+\captura{figuras/entrega2/03-jenkins-dashboard.png}{Panel principal de Jenkins con el job creado y su primera ejecuci\'on.}
 
 \subsection{Pipeline como c\'odigo}
 El archivo \texttt{Jenkinsfile} define tres etapas. Checkout obtiene la revisi\'on
@@ -268,7 +272,7 @@ pipeline {
 }
 \end{lstlisting}
 
-\captura{figuras/entrega2/05-jenkinsfile-github.png}{Archivo Jenkinsfile versionado en la ra\'iz del repositorio.}
+\captura{figuras/entrega2/04-jenkinsfile-github.png}{Archivo Jenkinsfile versionado en la ra\'iz del repositorio.}
 
 \subsection{Job, SCM y sondeo}
 En la interfaz de Jenkins se crea un elemento de tipo Pipeline. Se elige
@@ -278,16 +282,16 @@ credenciales porque el repositorio es p\'ublico. Se activa Poll SCM con
 \texttt{H/5 * * * *}; el sondeo permite detectar cambios aunque Jenkins se ejecute
 en localhost, inaccesible para webhooks entrantes de GitHub.
 
-\captura{figuras/entrega2/06-job-scm.png}{Job configurado para leer el pipeline desde GitHub.}
-\captura{figuras/entrega2/07-poll-scm.png}{Disparador Poll SCM con intervalo aproximado de cinco minutos.}
+\captura{figuras/entrega2/05-job-scm.png}{Job configurado para leer el pipeline desde GitHub.}
+\captura{figuras/entrega2/06-poll-scm.png}{Disparador Poll SCM con intervalo aproximado de cinco minutos.}
 
 \subsection{Ejecuci\'on}
 Una ejecuci\'on correcta debe mostrar las etapas Checkout, Build y Test en verde.
 La consola debe terminar en \texttt{Finished: SUCCESS}; ante un fallo, la consola
 permite localizar si ocurri\'o durante la descarga, construcci\'on o prueba.
 
-\captura{figuras/entrega2/08-pipeline-verde.png}{Vista de etapas con una ejecuci\'on completada correctamente.}
-\captura{figuras/entrega2/09-console-success.png}{Final de la consola con el resultado SUCCESS.}
+\captura{figuras/entrega2/07-pipeline-verde.png}{Vista de etapas con una ejecuci\'on completada correctamente.}
+\captura{figuras/entrega2/08-console-success.png}{Final de la consola con el resultado SUCCESS.}
 
 \section{Procedimiento de puesta en marcha}
 \begin{lstlisting}[caption={Comandos locales}]
