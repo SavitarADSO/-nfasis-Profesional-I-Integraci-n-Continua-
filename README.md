@@ -21,6 +21,9 @@ proyecto-ci/
 ├── .github/
 │   └── workflows/
 │       └── docker.yml      # Pipeline de GitHub Actions (paso 7)
+├── jenkins/
+│   └── Dockerfile          # Jenkins con Docker CLI para ejecutar el pipeline
+├── Jenkinsfile             # Pipeline de Jenkins (Entrega 2)
 ├── docker-compose.yml      # Orquestación de los dos contenedores (paso 3)
 ├── .env.example            # Plantilla de variables de entorno (sí se sube)
 ├── .gitignore              # Ignora .env, __pycache__, etc.
@@ -145,7 +148,42 @@ El semáforo verde se ve en la pestaña **Actions** del repositorio en GitHub.
 
 ---
 
-## 6. Comandos útiles
+## 6. Jenkins (Entrega 2)
+
+Jenkins se ejecuta como un tercer servicio de Compose en la misma red. Su volumen
+`jenkins_home` conserva la configuración y los trabajos. El puerto web se publica
+solo en el equipo local (`http://localhost:8080`).
+
+```powershell
+# Con Docker Desktop iniciado y el archivo .env ya creado
+docker compose up -d --build
+docker compose ps
+docker compose logs -f jenkins
+
+# Contraseña de desbloqueo del primer inicio
+docker compose exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+En el asistente web, desbloquee Jenkins, instale los plugins sugeridos y cree
+un usuario administrador. Después cree un elemento de tipo **Pipeline**:
+
+1. En **Pipeline**, elija **Pipeline script from SCM** y **Git**.
+2. Use la URL de este repositorio, la rama `*/main` y `Jenkinsfile` como ruta.
+   Al ser público, no necesita credenciales.
+3. En **Build Triggers**, active **Poll SCM** con `H/5 * * * *`.
+4. Guarde y seleccione **Build Now**. Las etapas construyen la imagen de Flask
+   y comprueban que `app.py` compila dentro del contenedor.
+
+> La imagen de Jenkins usa el socket de Docker del equipo para construir
+> imágenes. Esto concede a Jenkins control sobre el motor Docker y se limita
+> aquí a un entorno académico local; no es una configuración para exponer en
+> una red pública.
+
+El informe y la lista de capturas de la Entrega 2 están en `docs/`.
+
+---
+
+## 7. Comandos útiles
 
 | Comando | Para qué sirve |
 |---|---|
@@ -163,7 +201,7 @@ El semáforo verde se ve en la pestaña **Actions** del repositorio en GitHub.
 
 ---
 
-## 7. Solución de problemas
+## 8. Solución de problemas
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
@@ -174,17 +212,17 @@ El semáforo verde se ve en la pestaña **Actions** del repositorio en GitHub.
 
 ---
 
-## 8. Informe final
+## 9. Informes
 
-El informe de la entrega 1 (paso 8) está en `docs/informe_entrega1.tex` y se compila
-con [Tectonic](https://tectonic-typesetting.github.io/) o en
-[Overleaf](https://www.overleaf.com/):
+Los informes de ambas entregas están en `docs/` como fuentes LaTeX y PDF. Se
+compilan con [Tectonic](https://tectonic-typesetting.github.io/) o en
+[Overleaf](https://www.overleaf.com/). Por ejemplo:
 
 ```bash
 cd docs
 tectonic informe_entrega1.tex
+tectonic informe_entrega2.tex
 ```
 
-Las capturas de pantalla se guardan en `docs/figuras/` con los nombres indicados en el
-propio informe; si falta alguna, el documento muestra un recuadro de "captura pendiente"
-y compila igual.
+Las capturas se guardan en las carpetas indicadas por cada informe. Si falta alguna,
+el documento muestra un recuadro de "captura pendiente" y compila igualmente.

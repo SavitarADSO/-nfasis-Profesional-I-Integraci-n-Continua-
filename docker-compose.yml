@@ -1,5 +1,5 @@
-# Dos contenedores que se comunican por el NOMBRE DEL SERVICIO "db".
-# Levantar con:  docker compose up -d
+# Aplicacion Flask, PostgreSQL y Jenkins en una red compartida.
+# Levantar con: docker compose up -d --build
 services:
   app:
     build: ./app
@@ -28,6 +28,20 @@ services:
       - red_proyecto
     restart: unless-stopped
 
+  jenkins:
+    build: ./jenkins
+    container_name: ci_jenkins
+    user: root
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - red_proyecto
+    restart: unless-stopped
+
   db:
     image: postgres:16.4
     container_name: ci_db
@@ -49,3 +63,4 @@ networks:
 
 volumes:
   db_data:
+  jenkins_home:

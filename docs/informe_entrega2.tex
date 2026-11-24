@@ -1,0 +1,323 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\shorthandoff{"}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,backgrounds,calc,babel}
+\usepackage[hidelinks,breaklinks]{hyperref}
+
+\newcommand{\titulo}{Implementaci\'on de Jenkins como servidor de integraci\'on continua}
+\newcommand{\materia}{\'Enfasis Profesional I (Integraci\'on Continua)}
+\newcommand{\docente}{Edward Reyes Corredor}
+\newcommand{\integrante}{Miguel Angel Aguilar Luna}
+\newcommand{\usuario}{SavitarADSO}
+\newcommand{\fecha}{24 de noviembre de 2026}
+\newcommand{\repositorio}{\url{https://github.com/SavitarADSO/-nfasis-Profesional-I-Integraci-n-Continua-}}
+\definecolor{negro}{HTML}{000000}
+\definecolor{gris}{HTML}{595959}
+\definecolor{fondo}{HTML}{F2F2F2}
+\titleformat{\section}{\large\bfseries\color{negro}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{negro}}{\thesubsection}{0.6em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\footnotesize Entrega 2 -- Jenkins}
+\fancyhead[R]{\footnotesize \'Enfasis Profesional I}
+\fancyfoot[C]{\small\thepage}
+\setlength{\parindent}{0.6cm}
+\setlength{\parskip}{0.35em}
+\sloppy
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.2em,topsep=0.3em}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=0.2em,topsep=0.3em}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{fondo},
+  numbers=left,
+  numberstyle=\tiny\color{gris},
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{gris},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+\newcommand{\captura}[2]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{#1}{%
+      \includegraphics[width=0.88\textwidth]{#1}%
+    }{%
+      \fbox{\parbox[c][4.2cm][c]{0.84\textwidth}{%
+        \centering\color{gris}\textbf{\large EVIDENCIA PENDIENTE}\\[0.5em]
+        \small Guarda la captura solicitada con este nombre:\\[0.4em]
+        \texttt{#1}}}%
+    }
+    \caption{#2}
+  \end{figure}
+}
+
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{1.4cm}
+{\color{negro}\rule{\textwidth}{1.5pt}}\\[0.6cm]
+{\LARGE\bfseries \titulo\par}
+\vspace{0.6cm}
+{\large Segunda entrega -- Proyecto de integraci\'on continua\par}
+{\color{negro}\rule{\textwidth}{1.5pt}}
+\vspace{1.8cm}
+{\large\bfseries Integrante\par}
+\vspace{0.3cm}
+{\Large \integrante\par}
+{\usuario\par}
+\vspace{1.2cm}
+{\large\bfseries Docente\par}
+\vspace{0.3cm}
+{\Large \docente\par}
+\vfill
+{\large \materia\par}
+\vspace{0.4cm}
+{\large \fecha\par}
+\vspace{0.6cm}
+{\small Repositorio: \repositorio\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introducci\'on}
+En la primera entrega se implement\'o una API Flask que persiste mensajes en
+PostgreSQL. Ambos servicios se orquestan con Docker Compose y la aplicaci\'on
+encuentra la base de datos mediante el nombre de servicio \texttt{db}. Esta
+segunda entrega incorpora Jenkins al mismo proyecto para automatizar la descarga
+del c\'odigo, la construcci\'on de la imagen de la aplicaci\'on y una prueba de
+sintaxis reproducible.
+
+Jenkins se ejecuta localmente como un tercer servicio de Compose. El archivo
+\texttt{Jenkinsfile}, versionado en la ra\'iz del repositorio, describe las
+etapas del pipeline. Este informe documenta los requisitos, la arquitectura,
+la configuraci\'on y las evidencias de la ejecuci\'on.
+
+\section{Objetivos}
+\subsection{Objetivo general}
+Integrar Jenkins con el proyecto Docker existente y con GitHub para construir
+y verificar la imagen de Flask mediante un pipeline como c\'odigo.
+
+\subsection{Objetivos espec\'ificos}
+\begin{itemize}
+  \item Documentar los requisitos b\'asicos de hardware, software, red y almacenamiento.
+  \item A\~nadir Jenkins al archivo Compose sin sustituir los servicios de la Entrega 1.
+  \item Conservar de forma persistente la configuraci\'on de Jenkins.
+  \item Configurar un job que obtenga el \texttt{Jenkinsfile} desde la rama principal.
+  \item Ejecutar y registrar con evidencia las etapas Checkout, Build y Test.
+\end{itemize}
+
+\section{Requisitos para la implementaci\'on}
+\subsection{Recursos y software}
+Para una pr\'actica local conviene disponer de al menos 4 GB de memoria RAM
+asignada a Docker Desktop y espacio libre para la imagen de Jenkins, las im\'agenes
+del proyecto y el historial de ejecuciones. La primera construcci\'on descarga
+la imagen base y los paquetes requeridos, por lo que puede tomar varios minutos.
+
+\begin{table}[H]
+\centering
+\caption{Componentes y funci\'on en esta soluci\'on}
+\begin{tabularx}{\textwidth}{>{\bfseries}p{3.2cm}X}
+\toprule
+Componente & Uso \\
+\midrule
+Docker Desktop y Compose v2 & Ejecutar y orquestar los tres servicios. \\
+Jenkins 2.541.3 con JDK 17 & Servidor que administra el job y sus ejecuciones. \\
+Docker CLI & Construir la imagen de Flask desde el pipeline. \\
+GitHub p\'ublico & Fuente del c\'odigo y del archivo Jenkinsfile. \\
+Navegador web & Configuraci\'on inicial de Jenkins en localhost:8080. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Red, puertos y persistencia}
+El servicio Jenkins comparte la red bridge \texttt{red\_proyecto} con \texttt{app}
+y \texttt{db}. El puerto web 8080 se publica solo en la interfaz local del equipo;
+50000 queda reservado para agentes entrantes. El volumen nombrado
+\texttt{jenkins\_home} conserva usuarios, plugins, jobs y ejecuciones cuando el
+contenedor se recrea.
+
+\subsection{Acceso al motor Docker}
+El pipeline necesita comunicarse con el motor Docker del anfitri\'on. Para esta
+pr\'actica local se monta \texttt{/var/run/docker.sock} y Jenkins se ejecuta como
+root dentro del contenedor. Este acceso equivale a conceder control sobre el
+motor Docker; por ello la interfaz se enlaza a localhost y no se debe exponer
+este montaje a un servidor o red no confiable.
+
+\section{Arquitectura}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=1.5cm and 1.7cm,
+  servicio/.style={draw,rounded corners,align=center,minimum width=3.0cm,minimum height=1.2cm},
+  flecha/.style={-{Latex[length=2.5mm]},thick}
+]
+\node[servicio] (git) {GitHub\\Repositorio p\'ublico};
+\node[servicio,right=of git] (jenkins) {Jenkins\\Checkout / Build / Test};
+\node[servicio,below right=of jenkins] (app) {Flask\\Imagen construida};
+\node[servicio,below left=of app] (db) {PostgreSQL\\Servicio db};
+\node[draw,dashed,rounded corners,fit=(jenkins)(app)(db),inner sep=0.55cm,label=below:{Red Compose \texttt{red\_proyecto}}] (red) {};
+\draw[flecha] (git) -- node[above,align=center]{Git HTTPS\\Poll SCM} (jenkins);
+\draw[flecha] (jenkins) -- node[right,align=left]{Docker CLI\\socket del motor} (app);
+\draw[flecha] (app) -- node[below,align=center]{DNS Compose: db:5432} (db);
+\end{tikzpicture}
+\caption{Vista general de la arquitectura de la Entrega 2.}
+\end{figure}
+
+GitHub aloja el c\'odigo y el pipeline. Jenkins consulta el repositorio y ejecuta
+Docker CLI mediante el socket montado. Los servicios existentes Flask y PostgreSQL
+mantienen su comunicaci\'on por el nombre \texttt{db}; Jenkins no cambia esa
+configuraci\'on ni reemplaza GitHub Actions de la primera entrega.
+
+\section{Implementaci\'on}
+\subsection{Imagen y servicio Jenkins}
+El Dockerfile utiliza una versi\'on identificada de Jenkins con JDK 17 e instala
+Docker CLI. En Compose se agrega el servicio \texttt{jenkins}, su volumen
+\texttt{jenkins\_home}, los puertos locales y el socket Docker. La aplicaci\'on y
+la base de datos permanecen sin cambios.
+
+\begin{lstlisting}[caption={Contenido de jenkins/Dockerfile}]
+FROM jenkins/jenkins:2.541.3-lts-jdk17
+
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends docker.io \
+    && rm -rf /var/lib/apt/lists/*
+USER jenkins
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Extracto del servicio Jenkins en docker-compose.yml}]
+jenkins:
+  build: ./jenkins
+  container_name: ci_jenkins
+  user: root
+  ports:
+    - "127.0.0.1:8080:8080"
+    - "127.0.0.1:50000:50000"
+  volumes:
+    - jenkins_home:/var/jenkins_home
+    - /var/run/docker.sock:/var/run/docker.sock
+  networks:
+    - red_proyecto
+\end{lstlisting}
+
+\captura{figuras/entrega2/01-compose-jenkins.png}{Estado de los tres servicios en Docker Compose.}
+\captura{figuras/entrega2/02-jenkins-logs.png}{Registro de inicio del servicio Jenkins.}
+
+\subsection{Configuraci\'on inicial}
+En el primer inicio, Jenkins solicita la contrase\~na temporal almacenada en
+\texttt{/var/jenkins\_home/secrets/initialAdminPassword}. Despu\'es de desbloquear
+el servidor se instalan los plugins sugeridos y se crea un usuario administrador.
+La contrase\~na no forma parte del repositorio ni debe aparecer en las capturas.
+
+\captura{figuras/entrega2/03-unlock-jenkins.png}{Asistente de desbloqueo con la contrase\~na oculta.}
+\captura{figuras/entrega2/04-jenkins-inicializado.png}{Panel principal tras la configuraci\'on inicial.}
+
+\subsection{Pipeline como c\'odigo}
+El archivo \texttt{Jenkinsfile} define tres etapas. Checkout obtiene la revisi\'on
+configurada en el job; Build crea la imagen de Flask; Test ejecuta el compilador
+de Python dentro de esa imagen. Se deshabilitan ejecuciones simult\'aneas para
+evitar que dos jobs reemplacen la misma etiqueta Docker a la vez.
+
+\begin{lstlisting}[caption={Jenkinsfile}]
+pipeline {
+    agent any
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Build') {
+            steps {
+                sh 'docker build -t proyecto-ci-app:jenkins ./app'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'docker run --rm --entrypoint python proyecto-ci-app:jenkins -m py_compile app.py'
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\captura{figuras/entrega2/05-jenkinsfile-github.png}{Archivo Jenkinsfile versionado en la ra\'iz del repositorio.}
+
+\subsection{Job, SCM y sondeo}
+En la interfaz de Jenkins se crea un elemento de tipo Pipeline. Se elige
+\emph{Pipeline script from SCM}, SCM Git, la URL HTTPS del repositorio p\'ublico,
+la rama \texttt{*/main} y la ruta \texttt{Jenkinsfile}. No se configuran
+credenciales porque el repositorio es p\'ublico. Se activa Poll SCM con
+\texttt{H/5 * * * *}; el sondeo permite detectar cambios aunque Jenkins se ejecute
+en localhost, inaccesible para webhooks entrantes de GitHub.
+
+\captura{figuras/entrega2/06-job-scm.png}{Job configurado para leer el pipeline desde GitHub.}
+\captura{figuras/entrega2/07-poll-scm.png}{Disparador Poll SCM con intervalo aproximado de cinco minutos.}
+
+\subsection{Ejecuci\'on}
+Una ejecuci\'on correcta debe mostrar las etapas Checkout, Build y Test en verde.
+La consola debe terminar en \texttt{Finished: SUCCESS}; ante un fallo, la consola
+permite localizar si ocurri\'o durante la descarga, construcci\'on o prueba.
+
+\captura{figuras/entrega2/08-pipeline-verde.png}{Vista de etapas con una ejecuci\'on completada correctamente.}
+\captura{figuras/entrega2/09-console-success.png}{Final de la consola con el resultado SUCCESS.}
+
+\section{Procedimiento de puesta en marcha}
+\begin{lstlisting}[caption={Comandos locales}]
+docker compose up -d --build
+docker compose ps
+docker compose logs -f jenkins
+docker compose exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+\end{lstlisting}
+Al terminar la configuraci\'on web, se guarda el job y se ejecuta \emph{Build
+Now}. Las capturas se guardan en \texttt{docs/figuras/entrega2/} siguiendo la
+lista de nombres de \texttt{LEEME.md}. Para detener los servicios sin perder los
+datos de Jenkins se usa \texttt{docker compose down}; no se debe a\~nadir \texttt{-v}
+si se quiere conservar su configuraci\'on.
+
+\section{Conclusiones}
+Jenkins se integra en la infraestructura existente como servicio adicional,
+mientras Flask, PostgreSQL y el pipeline de GitHub Actions de la Entrega 1
+conservan su funci\'on. El pipeline almacenado en el repositorio hace reproducible
+la construcci\'on de la imagen y comprueba la sintaxis de la aplicaci\'on. El
+volumen nombrado preserva la configuraci\'on del servidor; Poll SCM permite
+consultar GitHub sin publicar Jenkins en Internet. El montaje del socket Docker
+es una concesi\'on de privilegios significativa y queda limitado a la pr\'actica
+local.
+
+\section*{Referencias}
+\begin{itemize}
+  \item Jenkins. \emph{Jenkins User Documentation}. \url{https://www.jenkins.io/doc/}
+  \item Jenkins. \emph{Installing Jenkins}. \url{https://www.jenkins.io/doc/book/installing/}
+  \item Docker Inc. \emph{Docker Compose documentation}. \url{https://docs.docker.com/compose/}
+  \item GitHub. \emph{About GitHub Actions}. \url{https://docs.github.com/en/actions}
+\end{itemize}
+
+\end{document}
